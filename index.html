@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>과학으로 여는 자물쇠</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #05070f;
+    --bg2: #0b1226;
+    --ink: #e8f1ff;
+    --muted: #8ea3c7;
+    --accent: #3cf2ff;
+    --accent2: #ffd23c;
+    --danger: #ff4d6d;
+    --panel: rgba(16, 26, 54, 0.72);
+    --line: rgba(60, 242, 255, 0.35);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: radial-gradient(ellipse at 50% 30%, var(--bg2), var(--bg) 70%);
+    color: var(--ink);
+    font-family: "Noto Sans KR", system-ui, sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; }
+
+  /* 배경: 격자 + 떠다니는 입자 */
+  #bgGrid {
+    position: fixed; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(60,242,255,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(60,242,255,.06) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+    animation: gridMove 20s linear infinite;
+  }
+  @keyframes gridMove { to { background-position: 48px 48px; } }
+  #fx { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+  #dust { position: fixed; inset: 0; pointer-events: none; }
+
+  .screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px 16px;
+    opacity: 0; visibility: hidden;
+    transition: opacity .7s ease, visibility .7s;
+  }
+  .screen.active { opacity: 1; visibility: visible; }
+
+  /* ---------- 1. 타이틀 ---------- */
+  .lock-icon {
+    width: 96px; height: 96px; margin-bottom: 28px;
+    filter: drop-shadow(0 0 18px rgba(60,242,255,.7));
+    animation: float 3.5s ease-in-out infinite;
+  }
+  @keyframes float { 50% { transform: translateY(-10px); } }
+  .title {
+    font-family: "Black Han Sans", "Noto Sans KR", sans-serif;
+    font-size: clamp(40px, 9vw, 96px);
+    letter-spacing: .04em;
+    text-align: center;
+    line-height: 1.1;
+    background: linear-gradient(180deg, #ffffff 10%, #9ff8ff 55%, #3cf2ff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 24px rgba(60,242,255,.45));
+    animation: titleIn 1.4s cubic-bezier(.2,.9,.2,1) both;
+  }
+  @keyframes titleIn {
+    from { opacity: 0; letter-spacing: .5em; filter: blur(12px); }
+  }
+  .subtitle {
+    margin-top: 14px; color: var(--muted);
+    font-family: "Share Tech Mono", monospace; letter-spacing: .3em; font-size: 13px;
+    animation: fadeUp 1s .8s both;
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } }
+
+  .btn {
+    position: relative;
+    margin-top: 44px;
+    padding: 16px 44px;
+    font-size: 20px; font-weight: 700; color: #04121a;
+    background: linear-gradient(135deg, #3cf2ff, #7cffc4);
+    border: 0; border-radius: 999px; cursor: pointer;
+    box-shadow: 0 0 0 0 rgba(60,242,255,.6), 0 10px 30px rgba(60,242,255,.25);
+    transition: transform .15s, box-shadow .3s, opacity .3s, filter .3s;
+    animation: fadeUp 1s 1.2s both, pulse 2.4s 2.2s infinite;
+  }
+  .btn:hover { transform: translateY(-2px) scale(1.03); }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled {
+    cursor: not-allowed; filter: grayscale(1) brightness(.6); animation: none;
+    box-shadow: none;
+  }
+  .btn .arrow { display: inline-block; transition: transform .2s; }
+  .btn:hover .arrow { transform: translateX(6px); }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(60,242,255,.55), 0 10px 30px rgba(60,242,255,.25); }
+    100% { box-shadow: 0 0 0 22px rgba(60,242,255,0), 0 10px 30px rgba(60,242,255,.25); }
+  }
+
+  /* ---------- 공통 패널 ---------- */
+  .panel {
+    width: min(520px, 100%);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 36px 32px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 40px rgba(60,242,255,.12), inset 0 0 30px rgba(60,242,255,.05);
+    position: relative;
+  }
+  .panel::before {
+    content: "SECURITY TERMINAL // v.0.1";
+    position: absolute; top: -10px; left: 24px;
+    padding: 0 10px; background: var(--bg);
+    font-family: "Share Tech Mono", monospace; font-size: 12px; color: var(--accent);
+    letter-spacing: .15em;
+  }
+  .panel h2 { font-size: 24px; font-weight: 900; margin-bottom: 8px; }
+  .panel .desc { color: var(--muted); font-size: 15px; margin-bottom: 26px; }
+
+  /* ---------- 2. 닉네임 ---------- */
+  .field label { display: block; font-size: 14px; color: var(--accent); margin-bottom: 8px; font-weight: 700; }
+  .field input[type=text] {
+    width: 100%; padding: 14px 16px; font-size: 18px; font-family: inherit;
+    color: var(--ink); background: rgba(0,0,0,.35);
+    border: 1px solid var(--line); border-radius: 12px; outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .field input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(60,242,255,.2); }
+  .counter { text-align: right; font-size: 12px; color: var(--muted); margin-top: 6px; font-family: "Share Tech Mono", monospace; }
+  .consent {
+    margin-top: 22px; padding: 16px; border-radius: 12px;
+    background: rgba(0,0,0,.25); border: 1px dashed rgba(142,163,199,.35);
+    font-size: 13px; color: var(--muted); line-height: 1.7;
+  }
+  .consent ul { padding-left: 18px; margin: 6px 0 12px; }
+  .check {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    color: var(--ink); font-size: 15px; font-weight: 500; user-select: none;
+  }
+  .check input { position: absolute; opacity: 0; pointer-events: none; }
+  .check .box {
+    width: 22px; height: 22px; flex: none; border-radius: 6px;
+    border: 2px solid var(--accent); display: grid; place-items: center;
+    transition: background .2s;
+  }
+  .check .box svg { width: 14px; height: 14px; stroke: #04121a; stroke-width: 3.5; fill: none;
+    stroke-dasharray: 20; stroke-dashoffset: 20; transition: stroke-dashoffset .25s; }
+  .check input:checked + .box { background: var(--accent); }
+  .check input:checked + .box svg { stroke-dashoffset: 0; }
+  .check input:focus-visible + .box { box-shadow: 0 0 0 3px rgba(60,242,255,.35); }
+  #nickScreen .btn, #storyScreen .btn { animation: none; width: 100%; margin-top: 26px; }
+  #nickScreen .btn:not(:disabled) { animation: pulse 2.4s infinite; }
+  .hint { min-height: 20px; margin-top: 10px; font-size: 13px; color: var(--danger); text-align: center; }
+
+  /* ---------- 3. 스토리 ---------- */
+  #storyScreen .panel { width: min(680px, 100%); }
+  #storyScreen .panel::before { content: "INCOMING TRANSMISSION ▮"; color: var(--accent2); }
+  .story {
+    font-size: clamp(16px, 2.3vw, 19px);
+    line-height: 1.95;
+    min-height: 340px;
+    white-space: pre-wrap;
+    word-break: keep-all;
+  }
+  .story .em { color: var(--accent2); font-weight: 700; }
+  .caret { display: inline-block; width: .55em; height: 1.1em; background: var(--accent);
+    vertical-align: -0.15em; animation: blink .8s steps(1) infinite; margin-left: 2px; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .skip {
+    position: absolute; right: 18px; top: 14px; background: none; border: 0;
+    color: var(--muted); font-size: 12px; cursor: pointer; font-family: "Share Tech Mono", monospace;
+    letter-spacing: .1em;
+  }
+  .skip:hover { color: var(--ink); }
+  #okBtn { opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .5s, transform .5s; }
+  #okBtn.show { opacity: 1; transform: none; pointer-events: auto; }
+
+  /* ---------- 4. 연구실 (신분증 + 큐브) ---------- */
+  #labScreen { justify-content: center; perspective: 1400px; }
+  .flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 60; }
+  .flash.go { animation: flash 1s ease-out; }
+  @keyframes flash { 0% { opacity: 0; } 8% { opacity: 1; } 100% { opacity: 0; } }
+
+  .rays {
+    position: fixed; left: 50%; top: 50%; width: 180vmax; height: 180vmax;
+    transform: translate(-50%, -50%);
+    background: repeating-conic-gradient(from 0deg, rgba(255,210,60,.18) 0deg 6deg, transparent 6deg 18deg);
+    mask-image: radial-gradient(circle, #000 0%, transparent 45%);
+    opacity: 0; pointer-events: none;
+  }
+  .rays.go { animation: rays 3.2s ease-out forwards; }
+  @keyframes rays {
+    0% { opacity: 0; transform: translate(-50%,-50%) rotate(0) scale(.3); }
+    20% { opacity: 1; }
+    80% { opacity: .8; }
+    100% { opacity: 0; transform: translate(-50%,-50%) rotate(120deg) scale(1.1); }
+  }
+  .ring {
+    position: fixed; left: 50%; top: 50%; width: 40px; height: 40px; border-radius: 50%;
+    border: 3px solid var(--accent); transform: translate(-50%,-50%) scale(0);
+    pointer-events: none; opacity: 0;
+  }
+  .ring.go { animation: ring 1.4s ease-out forwards; }
+  .ring.r2.go { animation-delay: .18s; border-color: var(--accent2); }
+  .ring.r3.go { animation-delay: .36s; border-color: #ff7ad9; }
+  @keyframes ring {
+    0% { opacity: 1; transform: translate(-50%,-50%) scale(0); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(30); border-width: 1px; }
+  }
+
+  /* 신분증 */
+  .id-wrap {
+    position: fixed; left: 50%; top: 50%; z-index: 40;
+    transform: translate(-50%, -50%);
+    transition: all 1.1s cubic-bezier(.65,0,.25,1);
+  }
+  .id-wrap.docked {
+    left: 24px; top: 24px; transform: translate(0,0) scale(.52);
+    transform-origin: top left;
+  }
+  .id-card {
+    width: 420px; max-width: calc(100vw - 32px); aspect-ratio: 1.586;
+    border-radius: 18px; position: relative; overflow: hidden;
+    background:
+      radial-gradient(circle at 85% 15%, rgba(60,242,255,.35), transparent 40%),
+      linear-gradient(135deg, #0f2a4a 0%, #13203d 45%, #2a1446 100%);
+    border: 1px solid rgba(255,255,255,.25);
+    box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 50px rgba(60,242,255,.35);
+    padding: 20px 22px; color: #fff;
+    opacity: 0;
+    transform-style: preserve-3d;
+  }
+  .id-card.enter { animation: cardIn 1.8s cubic-bezier(.2,.9,.25,1.05) forwards; }
+  @keyframes cardIn {
+    0% { opacity: 0; transform: translateZ(-1600px) rotateY(-720deg) rotateX(30deg); filter: brightness(4) blur(6px); }
+    55% { opacity: 1; filter: brightness(2) blur(0); }
+    75% { transform: translateZ(120px) rotateY(12deg) rotateX(-6deg); }
+    100% { opacity: 1; transform: none; filter: none; }
+  }
+  .id-card.idle { opacity: 1; animation: cardFloat 5s ease-in-out infinite; }
+  @keyframes cardFloat { 50% { transform: rotateY(8deg) rotateX(4deg) translateY(-4px); } }
+  /* 홀로그램 반짝임 */
+  .id-card::after {
+    content: ""; position: absolute; inset: -50%;
+    background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.0) 44%,
+      rgba(124,255,196,.35) 47%, rgba(255,122,217,.35) 50%, rgba(60,242,255,.35) 53%, transparent 58%);
+    transform: translateX(-60%);
+    animation: holo 3.2s 1.6s ease-in-out infinite;
+    mix-blend-mode: screen; pointer-events: none;
+  }
+  @keyframes holo { 0% { transform: translateX(-60%); } 60%,100% { transform: translateX(60%); } }
+
+  .id-top { display: flex; align-items: center; gap: 10px; }
+  .id-logo { width: 34px; height: 34px; }
+  .id-org { font-weight: 900; font-size: 17px; letter-spacing: .02em; }
+  .id-org small { display: block; font-family: "Share Tech Mono", monospace; font-weight: 400; font-size: 10px; letter-spacing: .25em; color: var(--accent); }
+  .id-badge {
+    margin-left: auto; font-family: "Share Tech Mono", monospace; font-size: 10px;
+    padding: 3px 8px; border: 1px solid var(--danger); color: var(--danger); border-radius: 4px;
+    letter-spacing: .1em; animation: blink 1.2s steps(1) infinite;
+  }
+  .id-body { display: flex; gap: 16px; margin-top: 16px; }
+  .id-photo {
+    width: 92px; height: 112px; flex: none; border-radius: 10px;
+    background: linear-gradient(160deg, #2b3e66, #1a2440);
+    border: 1px solid rgba(255,255,255,.2);
+    display: grid; place-items: center; position: relative; overflow: hidden;
+  }
+  .id-photo svg { width: 64px; opacity: .8; }
+  .id-photo .static {
+    position: absolute; inset: 0; opacity: .35;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.25) 0 1px, transparent 1px 3px);
+    animation: staticMove .25s steps(3) infinite;
+  }
+  @keyframes staticMove { to { background-position: 0 6px; } }
+  .id-info { flex: 1; font-size: 13px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+  .id-info .row { display: flex; gap: 8px; border-bottom: 1px dashed rgba(255,255,255,.15); padding-bottom: 4px; }
+  .id-info .k { width: 56px; flex: none; color: var(--muted); font-size: 11px; padding-top: 2px; }
+  .id-info .v { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .id-info .v.name { font-size: 18px; color: var(--accent2); }
+  .corrupt { font-family: "Share Tech Mono", monospace; color: #9fb0cf; letter-spacing: .05em; }
+  .glitch { animation: glitch 2.5s steps(1) infinite; display: inline-block; }
+  @keyframes glitch {
+    0%, 92%, 100% { transform: none; text-shadow: none; }
+    93% { transform: translateX(2px); text-shadow: -2px 0 var(--danger), 2px 0 var(--accent); }
+    96% { transform: translateX(-2px); text-shadow: 2px 0 var(--danger), -2px 0 var(--accent); }
+  }
+  .id-foot {
+    position: absolute; left: 22px; right: 22px; bottom: 14px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    font-family: "Share Tech Mono", monospace; font-size: 11px; color: var(--muted);
+  }
+  .barcode { height: 22px; width: 130px;
+    background: repeating-linear-gradient(90deg, #fff 0 2px, transparent 2px 4px, #fff 4px 5px, transparent 5px 8px, #fff 8px 11px, transparent 11px 13px);
+    opacity: .7; mask-image: linear-gradient(90deg, #000 60%, transparent 62%, transparent 70%, #000 72%);
+  }
+  .crack { position: absolute; inset: 0; pointer-events: none; }
+  .burn {
+    position: absolute; right: -30px; bottom: -40px; width: 170px; height: 150px;
+    background: radial-gradient(ellipse at 60% 60%, rgba(10,6,4,.95) 30%, rgba(60,30,10,.7) 48%, rgba(255,140,40,.25) 58%, transparent 66%);
+    pointer-events: none;
+  }
+
+  /* 큐브 */
+  .stage {
+    position: relative; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 1.2s ease;
+  }
+  .stage.show { opacity: 1; }
+  .stage-title {
+    font-family: "Share Tech Mono", monospace; color: var(--accent); letter-spacing: .3em; font-size: 13px;
+    margin-bottom: 8px; text-align: center;
+  }
+  .stage-sub { color: var(--muted); font-size: 14px; margin-bottom: 18px; text-align: center; }
+  .viewport {
+    --s: min(46vmin, 360px);
+    width: calc(var(--s) * 1.7); height: calc(var(--s) * 1.8);
+    max-width: 100%;
+    perspective: 1100px;
+    display: grid; place-items: center;
+    cursor: grab; touch-action: none;
+  }
+  .viewport:active { cursor: grabbing; }
+  .cube {
+    width: var(--s); height: var(--s);
+    position: relative; transform-style: preserve-3d;
+    transform: rotateX(-22deg) rotateY(-32deg);
+  }
+  .face {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,.16), rgba(200,230,255,.04) 45%, rgba(255,255,255,.10));
+    border: 2px solid rgba(225,240,255,.55);
+    box-shadow: inset 0 0 22px rgba(200,235,255,.18);
+    backface-visibility: visible;
+  }
+  .face::after { /* 아크릴 반사광 */
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,.22) 26%, transparent 34%, transparent 70%, rgba(255,255,255,.1) 74%, transparent 80%);
+  }
+  .f-front  { transform: translateZ(calc(var(--s) / 2)); }
+  .f-back   { transform: rotateY(180deg) translateZ(calc(var(--s) / 2)); }
+  .f-right  { transform: rotateY(90deg) translateZ(calc(var(--s) / 2)); }
+  .f-left   { transform: rotateY(-90deg) translateZ(calc(var(--s) / 2)); }
+  .f-top    { transform: rotateX(90deg) translateZ(calc(var(--s) / 2)); background: rgba(255,255,255,.07); }
+  .f-bottom { transform: rotateX(-90deg) translateZ(calc(var(--s) / 2)); background: rgba(255,255,255,.12); }
+  .clip {
+    position: absolute; left: 50%; top: 50%;
+    width: calc(var(--s) * .075); height: calc(var(--s) * .19);
+    margin-left: calc(var(--s) * -.0375); margin-top: calc(var(--s) * -.095);
+    backface-visibility: visible;
+  }
+  .clip svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  .shadow {
+    width: calc(var(--s) * 1.5); height: calc(var(--s) * .35); margin-top: calc(var(--s) * -.12);
+    background: radial-gradient(ellipse, rgba(60,242,255,.25), transparent 65%);
+    filter: blur(6px); pointer-events: none;
+  }
+  .drag-hint { margin-top: 6px; color: var(--muted); font-size: 13px; display: flex; gap: 8px; align-items: center; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+    padding: 10px 20px; font-size: 14px; opacity: 0; transition: all .5s; z-index: 70;
+    white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 640px) {
+    .panel { padding: 30px 20px; }
+    .id-wrap.docked { left: 12px; top: 12px; transform: scale(.42); }
+    .id-card { width: 380px; padding: 16px 18px; }
+    .id-photo { width: 78px; height: 96px; }
+    .stage { padding-top: 120px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+  <div id="bgGrid"></div>
+  <canvas id="dust"></canvas>
+  <canvas id="fx"></canvas>
+
+  <!-- 1. 타이틀 -->
+  <section class="screen active" id="titleScreen">
+    <svg class="lock-icon" viewBox="0 0 64 64" fill="none" stroke="#3cf2ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 28V20a12 12 0 0 1 24 0v8"/>
+      <rect x="12" y="28" width="40" height="30" rx="6" fill="rgba(60,242,255,.12)"/>
+      <circle cx="32" cy="41" r="4"/>
+      <path d="M32 45v6"/>
+    </svg>
+    <h1 class="title">과학으로 여는 자물쇠</h1>
+    <p class="subtitle">SCIENCE ESCAPE ROOM</p>
+    <button class="btn" id="enterBtn">입장 <span class="arrow">→</span></button>
+  </section>
+
+  <!-- 2. 닉네임 + 동의 -->
+  <section class="screen" id="nickScreen">
+    <form class="panel" id="nickForm" autocomplete="off">
+      <h2>요원 등록</h2>
+      <p class="desc">보안 시스템에 접속할 닉네임을 입력하세요.</p>
+      <div class="field">
+        <label for="nickname">닉네임</label>
+        <input type="text" id="nickname" maxlength="10" placeholder="예) 번개탐험가" required>
+        <div class="counter"><span id="nickCount">0</span>/10</div>
+      </div>
+      <div class="consent">
+        <strong style="color:var(--ink)">개인정보 수집·이용 안내</strong>
+        <ul>
+          <li>수집 항목: 닉네임</li>
+          <li>이용 목적: 게임 진행 및 신분증 표시</li>
+          <li>보관 기간: 게임 종료(브라우저를 닫으면 삭제)</li>
+        </ul>
+        <label class="check">
+          <input type="checkbox" id="agree">
+          <span class="box"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 4.5"/></svg></span>
+          닉네임 수집·이용에 동의합니다.
+        </label>
+      </div>
+      <button class="btn" id="startBtn" type="submit" disabled>시작하기</button>
+      <p class="hint" id="nickHint"></p>
+    </form>
+  </section>
+
+  <!-- 3. 스토리 -->
+  <section class="screen" id="storyScreen">
+    <div class="panel">
+      <button class="skip" id="skipBtn">SKIP ▸▸</button>
+      <div class="story" id="story"></div>
+      <button class="btn" id="okBtn">네 알겠습니다</button>
+    </div>
+  </section>
+
+  <!-- 4. 연구실 -->
+  <section class="screen" id="labScreen">
+    <div class="rays" id="rays"></div>
+    <div class="ring" id="ring1"></div>
+    <div class="ring r2" id="ring2"></div>
+    <div class="ring r3" id="ring3"></div>
+
+    <div class="id-wrap" id="idWrap">
+      <div class="id-card" id="idCard">
+        <div class="id-top">
+          <svg class="id-logo" viewBox="0 0 40 40" fill="none" stroke="#3cf2ff" stroke-width="2">
+            <ellipse cx="20" cy="20" rx="17" ry="6.5"/>
+            <ellipse cx="20" cy="20" rx="17" ry="6.5" transform="rotate(60 20 20)"/>
+            <ellipse cx="20" cy="20" rx="17" ry="6.5" transform="rotate(120 20 20)"/>
+            <circle cx="20" cy="20" r="3" fill="#ffd23c" stroke="none"/>
+          </svg>
+          <div class="id-org">과학 구조대<small>SCIENCE RESCUE TEAM</small></div>
+          <div class="id-badge">DAMAGED</div>
+        </div>
+        <div class="id-body">
+          <div class="id-photo">
+            <svg viewBox="0 0 64 64" fill="#8ea3c7"><circle cx="32" cy="24" r="12"/><path d="M8 62c2-14 12-22 24-22s22 8 24 22z"/></svg>
+            <div class="static"></div>
+          </div>
+          <div class="id-info">
+            <div class="row"><span class="k">요원명</span><span class="v name" id="idName">-</span></div>
+            <div class="row"><span class="k">소속</span><span class="v">중앙 연구실 <span class="corrupt glitch">▒▒</span>팀</span></div>
+            <div class="row"><span class="k">요원번호</span><span class="v corrupt">SR-<span class="glitch">█▒</span>7-<span class="glitch">??</span></span></div>
+            <div class="row"><span class="k">보안등급</span><span class="v corrupt glitch">░░░ 확인불가</span></div>
+          </div>
+        </div>
+        <div class="id-foot">
+          <div class="barcode"></div>
+          <span>EXP. ▒▒▒▒.▒▒</span>
+        </div>
+        <div class="burn"></div>
+        <svg class="crack" viewBox="0 0 420 265" preserveAspectRatio="none" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.2">
+          <path d="M420 70 L360 96 L338 88 L300 128 L268 122 L246 160"/>
+          <path d="M338 88 L326 52 L300 40"/>
+          <path d="M300 128 L312 170 L290 205"/>
+          <path d="M268 122 L230 112"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <p class="stage-title">EVIDENCE #01</p>
+      <p class="stage-sub">보안실 한가운데 투명한 아크릴 상자가 놓여 있다.</p>
+      <div class="viewport" id="viewport">
+        <div class="cube" id="cube">
+          <div class="face f-back"></div>
+          <div class="face f-left"></div>
+          <div class="face f-bottom"></div>
+          <div id="clips" style="position:absolute;inset:0;transform-style:preserve-3d"></div>
+          <div class="face f-right"></div>
+          <div class="face f-front"></div>
+          <div class="face f-top"></div>
+        </div>
+      </div>
+      <div class="shadow"></div>
+      <p class="drag-hint">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 13V5a2 2 0 0 1 4 0v6m0 0V4a2 2 0 0 1 4 0v7m0-2a2 2 0 0 1 4 0v5a7 7 0 0 1-7 7h-1a7 7 0 0 1-6-3l-3-5a2 2 0 0 1 3-2l2 2"/></svg>
+        드래그해서 상자를 돌려 보세요
+      </p>
+    </div>
+  </section>
+
+  <div class="flash" id="flash"></div>
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const state = { nickname: "" };
+
+  function show(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === id));
+  }
+  function toast(msg, ms = 2600) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove("show"), ms);
+  }
+
+  /* ---------- 배경 먼지 입자 ---------- */
+  const dust = $("dust"), dctx = dust.getContext("2d");
+  let motes = [];
+  function resizeDust() {
+    dust.width = innerWidth * devicePixelRatio; dust.height = innerHeight * devicePixelRatio;
+    motes = Array.from({ length: Math.round(innerWidth * innerHeight / 14000) }, () => ({
+      x: Math.random() * dust.width, y: Math.random() * dust.height,
+      r: (Math.random() * 1.6 + .4) * devicePixelRatio,
+      vy: -(Math.random() * .25 + .05) * devicePixelRatio, a: Math.random() * .6 + .2
+    }));
+  }
+  function drawDust() {
+    dctx.clearRect(0, 0, dust.width, dust.height);
+    for (const m of motes) {
+      m.y += m.vy; if (m.y < -5) m.y = dust.height + 5;
+      dctx.fillStyle = `rgba(160,240,255,${m.a})`;
+      dctx.beginPath(); dctx.arc(m.x, m.y, m.r, 0, Math.PI * 2); dctx.fill();
+    }
+    requestAnimationFrame(drawDust);
+  }
+  addEventListener("resize", resizeDust); resizeDust(); drawDust();
+
+  /* ---------- 1 → 2 ---------- */
+  $("enterBtn").addEventListener("click", () => {
+    show("nickScreen");
+    setTimeout(() => $("nickname").focus(), 500);
+  });
+
+  /* ---------- 2. 닉네임 ---------- */
+  const nick = $("nickname"), agree = $("agree"), startBtn = $("startBtn");
+  function validate() {
+    $("nickCount").textContent = nick.value.length;
+    const ok = nick.value.trim().length > 0 && agree.checked;
+    startBtn.disabled = !ok;
+    $("nickHint").textContent = "";
+  }
+  nick.addEventListener("input", validate);
+  agree.addEventListener("change", validate);
+  $("nickForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = nick.value.trim();
+    if (!name) { $("nickHint").textContent = "닉네임을 입력해 주세요."; return; }
+    if (!agree.checked) { $("nickHint").textContent = "개인정보 수집·이용에 동의해야 시작할 수 있어요."; return; }
+    state.nickname = name;
+    show("storyScreen");
+    setTimeout(typeStory, 700);
+  });
+
+  /* ---------- 3. 스토리 타이핑 ---------- */
+  const STORY = [
+    "과학이 사라진 세상에 떨어졌다.",
+    "이곳에서는 아무도 과학을 믿지 않는다.",
+    "사람들은 자석도, 빛도, 소리도, 에너지도 더 이상 궁금해하지 않는다.",
+    "",
+    "마지막으로 남은 [과학 구조대]의 연구실에",
+    "과학을 되살릴 수 있는 [마지막 데이터]가 보관되어 있다는 소문이 있다.",
+    "하지만 연구실의 보안 시스템은 오직 과학 원리를 이해하고 사용하는 사람만",
+    "통과할 수 있도록 설계되어 있다.",
+    "",
+    "여러분은 [훼손된 과학 구조대의 신분증]을 가지고 있다.",
+    "",
+    "연구실을 탈출하고,",
+    "마지막 과학 데이터를 되찾아",
+    "이 세상에 과학을 다시 전파하라."
+  ].join("\n");
+
+  // [강조] 표기를 문자 단위 토큰으로 분해
+  const tokens = [];
+  { let em = false; for (const ch of STORY) { if (ch === "[") em = true; else if (ch === "]") em = false; else tokens.push({ ch, em }); } }
+
+  let typing = null, typedIdx = 0;
+  function renderStory(n, done) {
+    let html = "", inEm = false;
+    for (let i = 0; i < n; i++) {
+      const t = tokens[i];
+      if (t.em && !inEm) { html += '<span class="em">'; inEm = true; }
+      if (!t.em && inEm) { html += "</span>"; inEm = false; }
+      html += t.ch === "<" ? "&lt;" : t.ch;
+    }
+    if (inEm) html += "</span>";
+    $("story").innerHTML = html + (done ? "" : '<span class="caret"></span>');
+  }
+  function typeStory() {
+    typedIdx = 0;
+    clearInterval(typing);
+    typing = setInterval(() => {
+      typedIdx++;
+      const ch = tokens[typedIdx - 1]?.ch;
+      if (ch === "\n") { typedIdx++; } // 줄바꿈에서 살짝 쉬는 느낌
+      renderStory(Math.min(typedIdx, tokens.length), false);
+      if (typedIdx >= tokens.length) finishStory();
+    }, 45);
+  }
+  function finishStory() {
+    clearInterval(typing);
+    renderStory(tokens.length, true);
+    $("okBtn").classList.add("show");
+    $("skipBtn").style.display = "none";
+  }
+  $("skipBtn").addEventListener("click", finishStory);
+
+  /* ---------- 4. 신분증 등장 ---------- */
+  $("okBtn").addEventListener("click", () => {
+    $("idName").textContent = state.nickname;
+    show("labScreen");
+    setTimeout(revealCard, 500);
+  });
+
+  function revealCard() {
+    const card = $("idCard");
+    ["rays", "ring1", "ring2", "ring3"].forEach(id => $(id).classList.add("go"));
+    card.classList.add("enter");
+    setTimeout(() => {
+      $("flash").classList.add("go");
+      burst(innerWidth / 2, innerHeight / 2, 220);
+    }, 950);
+    setTimeout(() => toast(`요원 ${state.nickname}, 신분증을 획득했습니다! (일부 정보 손상)`, 2200), 1900);
+    setTimeout(() => {
+      card.classList.remove("enter");
+      card.classList.add("idle");
+      $("idWrap").classList.add("docked");
+      buildClips();
+      $("stage").classList.add("show");
+    }, 3600);
+  }
+
+  /* 파티클 폭발 (canvas) */
+  const fx = $("fx"), fctx = fx.getContext("2d");
+  let parts = [], fxRunning = false;
+  const COLORS = ["#3cf2ff", "#ffd23c", "#ff7ad9", "#7cffc4", "#ffffff", "#ff4d6d"];
+  function burst(x, y, n) {
+    fx.width = innerWidth * devicePixelRatio; fx.height = innerHeight * devicePixelRatio;
+    const d = devicePixelRatio;
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, sp = (Math.random() * 11 + 3) * d;
+      parts.push({
+        x: x * d, y: y * d, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 3 * d,
+        life: 1, decay: Math.random() * .012 + .008,
+        size: (Math.random() * 5 + 2) * d, rot: Math.random() * 6, vr: (Math.random() - .5) * .4,
+        color: COLORS[(Math.random() * COLORS.length) | 0], shape: Math.random() < .5 ? "rect" : "star"
+      });
+    }
+    if (!fxRunning) { fxRunning = true; requestAnimationFrame(stepFx); }
+  }
+  function stepFx() {
+    fctx.clearRect(0, 0, fx.width, fx.height);
+    const d = devicePixelRatio;
+    parts = parts.filter(p => p.life > 0);
+    for (const p of parts) {
+      p.x += p.vx; p.y += p.vy; p.vy += .18 * d; p.vx *= .985; p.rot += p.vr; p.life -= p.decay;
+      fctx.save();
+      fctx.globalAlpha = Math.max(p.life, 0);
+      fctx.translate(p.x, p.y); fctx.rotate(p.rot);
+      fctx.fillStyle = p.color; fctx.shadowColor = p.color; fctx.shadowBlur = 12 * d;
+      if (p.shape === "rect") fctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      else { fctx.beginPath(); for (let i = 0; i < 8; i++) { const r = i % 2 ? p.size * .4 : p.size; fctx.lineTo(Math.cos(i * Math.PI / 4) * r, Math.sin(i * Math.PI / 4) * r); } fctx.fill(); }
+      fctx.restore();
+    }
+    if (parts.length) requestAnimationFrame(stepFx);
+    else { fxRunning = false; fctx.clearRect(0, 0, fx.width, fx.height); }
+  }
+
+  /* ---------- 아크릴 큐브 + 클립 ---------- */
+  const CLIP_COLORS = ["#ff2d2d", "#ffd400", "#1fb83a", "#1e6bff", "#ff7a00", "#e83ec4", "#00c2d1", "#8b3dff", "#ffffff", "#7ed321"];
+  // 종이 클립 모양 (이중 고리)
+  const CLIP_PATH = "M7 16 V40 a5 5 0 0 0 10 0 V9 a7 7 0 0 0 -14 0 V44 a9 9 0 0 0 18 0 V16";
+  let built = false;
+  function buildClips() {
+    if (built) return; built = true;
+    const box = $("clips");
+    const N = innerWidth < 640 ? 220 : 380;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < N; i++) {
+      const c = CLIP_COLORS[(Math.random() * CLIP_COLORS.length) | 0];
+      const el = document.createElement("div");
+      el.className = "clip";
+      // 상자 안쪽 범위 (-44% ~ 44%), 아래쪽이 더 촘촘하게
+      const x = (Math.random() * 2 - 1) * 42;
+      const z = (Math.random() * 2 - 1) * 42;
+      const y = 44 - Math.pow(Math.random(), 1.25) * 84; // 아래(+)로 몰림
+      const rx = Math.random() * 360, ry = Math.random() * 360, rz = Math.random() * 360;
+      el.style.transform =
+        `translate3d(calc(var(--s) * ${x / 100}), calc(var(--s) * ${y / 100}), calc(var(--s) * ${z / 100})) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg)`;
+      el.innerHTML = `<svg viewBox="0 0 24 56"><path d="${CLIP_PATH}" fill="none" stroke="${c}" stroke-width="3.4" stroke-linecap="round"/><path d="${CLIP_PATH}" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1" stroke-linecap="round" transform="translate(-.6 -.6)"/></svg>`;
+      frag.appendChild(el);
+    }
+    box.appendChild(frag);
+  }
+
+  // 회전: 자동 회전 + 드래그
+  const cube = $("cube"), vp = $("viewport");
+  let rotX = -22, rotY = -32, dragging = false, lastX = 0, lastY = 0, velY = .12, idleSince = 0;
+  vp.addEventListener("pointerdown", (e) => {
+    dragging = true; lastX = e.clientX; lastY = e.clientY; vp.setPointerCapture(e.pointerId);
+  });
+  vp.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    rotY += dx * .45; rotX = Math.max(-80, Math.min(80, rotX - dy * .45));
+    velY = dx * .45;
+  });
+  const endDrag = () => { dragging = false; idleSince = performance.now(); };
+  vp.addEventListener("pointerup", endDrag);
+  vp.addEventListener("pointercancel", endDrag);
+  (function spin() {
+    if (!dragging) {
+      // 드래그 관성 → 서서히 기본 자동회전으로
+      velY += (.12 - velY) * .03;
+      rotY += velY;
+    }
+    cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+    requestAnimationFrame(spin);
+  })();
+})();
+</script>
+</body>
+</html>
