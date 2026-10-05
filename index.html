@@ -375,12 +375,214 @@
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+  /* ---------- 신분증 끌기 + 자석 ---------- */
+  .id-wrap.draggable { cursor: grab; touch-action: none; }
+  .id-wrap.dragging { transition: none !important; cursor: grabbing; }
+  .id-wrap.glide { transition: left .6s cubic-bezier(.3,.8,.3,1), top .6s cubic-bezier(.3,.8,.3,1) !important; }
+  .id-wrap.call::after {
+    content: ""; position: absolute; inset: -12px; border-radius: 26px;
+    border: 3px dashed var(--accent2); pointer-events: none;
+    animation: callPulse 1.4s ease-in-out infinite;
+  }
+  @keyframes callPulse { 50% { opacity: .25; transform: scale(1.03); } }
+  .id-wrap.charged .id-card { box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 70px rgba(60,242,255,.9), 0 0 0 3px rgba(60,242,255,.8); }
+  .fring {
+    position: fixed; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%;
+    border: 2px solid rgba(60,242,255,.85); pointer-events: none; z-index: 39;
+    animation: fring 1.3s ease-out forwards;
+  }
+  @keyframes fring { from { transform: scale(.3); opacity: .9; } to { transform: scale(7); opacity: 0; } }
+  .clip.tremble svg { animation: tremble .07s linear infinite; filter: drop-shadow(0 0 4px #fff); }
+  @keyframes tremble {
+    0% { transform: translate(0, 0); } 25% { transform: translate(1.5px, -1px); }
+    50% { transform: translate(-1px, 1.5px); } 75% { transform: translate(1px, 1px); }
+  }
+  .mclip {
+    position: fixed; left: 0; top: 0; z-index: 45; pointer-events: none;
+    transform-origin: 50% 0; will-change: transform;
+  }
+  .mclip svg { width: 100%; height: 100%; overflow: visible; display: block; transition: filter 1s; }
+  .mclip.flying svg { filter: drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 2px #fff); }
+  .mclip .tag {
+    position: absolute; left: 50%; top: 60%;
+    width: var(--tag); height: var(--tag); margin: calc(var(--tag) / -2) 0 0 calc(var(--tag) / -2);
+    background: #fff; border: 2px solid var(--c); border-radius: 5px;
+    color: #111; font: 900 calc(var(--tag) * .68)/1 "Noto Sans KR", sans-serif;
+    display: grid; place-items: center; box-shadow: 0 2px 6px rgba(0,0,0,.5);
+  }
+
+  /* ---------- 상자 (공용) ---------- */
+  .chest { position: relative; width: 24em; height: 17em; perspective: 40em; }
+  .chest > * { position: absolute; }
+  .chest-inside {
+    left: 1em; right: 1em; bottom: 10.4em; height: 3.8em; border-radius: .6em .6em 0 0;
+    background: linear-gradient(180deg, #05080f, #1a2333);
+  }
+  .chest-light {
+    left: 18%; right: 18%; bottom: 11em; height: 2px; border-radius: 50%;
+    background: #ffe6a8; opacity: 0; transition: opacity .6s, box-shadow .6s;
+  }
+  .chest-base {
+    left: 0; right: 0; bottom: 0; height: 11em; z-index: 4;
+    border-radius: .5em .5em 1em 1em;
+    background:
+      linear-gradient(90deg, transparent 14%, #9fb3c6 14% 19%, transparent 19% 81%, #9fb3c6 81% 86%, transparent 86%),
+      linear-gradient(180deg, #2c5677, #173148);
+    border: .35em solid #b9c8d6;
+    box-shadow: inset 0 -1em 2em rgba(0,0,0,.45), 0 1.2em 2.5em rgba(0,0,0,.55);
+  }
+  .latch {
+    position: absolute; left: 50%; top: -.4em; width: 3.2em; height: 3.4em; margin-left: -1.6em;
+    background: linear-gradient(180deg, #e1e8ef, #8d9bab); border-radius: 0 0 .6em .6em;
+    box-shadow: 0 .2em .4em rgba(0,0,0,.5);
+  }
+  .chest-lid {
+    left: 0; right: 0; bottom: 10.7em; height: 6em; z-index: 2;
+    border-radius: 6em 6em .3em .3em / 3.5em 3.5em .3em .3em;
+    background:
+      linear-gradient(90deg, transparent 14%, #9fb3c6 14% 19%, transparent 19% 81%, #9fb3c6 81% 86%, transparent 86%),
+      linear-gradient(180deg, #3b6d93, #1d3e5a);
+    border: .35em solid #b9c8d6;
+    transform-origin: 50% 100%;
+    transition: transform 1s cubic-bezier(.3,1.3,.5,1), filter 1s;
+  }
+  .chest.open .chest-lid { transform: translateY(-3.8em) rotateX(48deg); filter: brightness(.7); }
+  .chest.open .chest-light { opacity: 1; box-shadow: 0 0 3em 1.6em rgba(255,210,130,.85), 0 0 8em 4em rgba(255,120,120,.35); }
+  .chest .mini-lock {
+    left: 50%; top: 6.4em; width: 6em; margin-left: -3em; z-index: 5;
+    transition: transform .8s cubic-bezier(.5,0,.9,.4), opacity .8s;
+    filter: drop-shadow(0 .3em .4em rgba(0,0,0,.6));
+  }
+  .chest.open .mini-lock { transform: translateY(8em) rotate(30deg); opacity: 0; }
+  .cello {
+    left: 50%; bottom: 1em; width: 12em; height: 9.6em; margin-left: -6em; z-index: 3;
+    border-radius: .3em;
+    background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,0) 0 1.4em, rgba(255,255,255,.18) 1.4em 1.55em, rgba(255,255,255,0) 1.55em 3em),
+      repeating-linear-gradient(35deg, rgba(120,0,10,0) 0 2.2em, rgba(120,0,10,.25) 2.2em 2.35em, rgba(120,0,10,0) 2.35em 4em),
+      linear-gradient(135deg, rgba(255,40,60,.85), rgba(255,100,120,.55) 40%, rgba(220,0,30,.8) 72%, rgba(255,120,140,.6));
+    box-shadow: 0 0 3em rgba(255,40,70,.6);
+    opacity: 0; transform: translateY(0) scale(.85);
+    transition: transform 1.6s cubic-bezier(.2,.9,.25,1), opacity .6s;
+    overflow: hidden;
+  }
+  .cello::after {
+    content: ""; position: absolute; inset: -40%;
+    background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,.55) 50%, transparent 58%);
+    animation: holo 2.6s 1.6s ease-in-out infinite; transform: translateX(-60%);
+  }
+  .chest.open .cello { opacity: 1; transform: translateY(-12.5em) rotate(-7deg) scale(1.15); transition-delay: .5s; }
+
+  /* 무대 위 작은 상자 */
+  .chest-spot {
+    position: fixed; right: 24px; bottom: 20px; z-index: 30;
+    background: none; border: 0; cursor: pointer; color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: transform .2s;
+  }
+  .chest-spot:hover { transform: translateY(-3px) scale(1.04); }
+  .chest-spot .chest { font-size: 6px; }
+  .chest-spot.attn .chest { animation: attn 1.6s ease-in-out infinite; }
+  @keyframes attn { 0%, 100% { filter: none; } 50% { filter: drop-shadow(0 0 12px var(--accent2)); } }
+  .chest-label { font-size: 13px; font-weight: 700; }
+
+  /* 자물쇠 모달 */
+  .modal {
+    position: fixed; inset: 0; z-index: 80;
+    background: rgba(2,4,10,.8); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+    opacity: 0; visibility: hidden; transition: opacity .4s, visibility .4s;
+  }
+  .modal.open { opacity: 1; visibility: visible; transition: opacity .4s, visibility 0s; }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); color: var(--ink);
+    font-size: 22px; cursor: pointer;
+  }
+  .lock-view { display: flex; flex-direction: column; align-items: center; }
+  .lock-view .btn { animation: none; margin-top: 30px; }
+  .lock-caption { color: var(--muted); font-size: 14px; margin-bottom: 48px; text-align: center; }
+  .padlock {
+    --slot: clamp(34px, 9vw, 52px);
+    position: relative; padding-top: calc(var(--slot) * 2.1);
+    transition: transform 1s cubic-bezier(.5,0,.9,.4), opacity 1s;
+  }
+  .shackle {
+    position: absolute; left: 50%; top: 0; z-index: 1;
+    width: calc(var(--slot) * 4.4); height: calc(var(--slot) * 3.2); margin-left: calc(var(--slot) * -2.2);
+    border: calc(var(--slot) * .48) solid #aeb8c6; border-bottom: 0;
+    border-radius: calc(var(--slot) * 2.2) calc(var(--slot) * 2.2) 0 0;
+    box-shadow: inset 0 4px 6px rgba(255,255,255,.35), 0 4px 10px rgba(0,0,0,.5);
+    transform-origin: 12% 100%;
+    transition: transform .6s cubic-bezier(.3,1.7,.5,1);
+  }
+  .padlock.unlocked .shackle { transform: translateY(calc(var(--slot) * -.95)) rotate(-14deg); }
+  .lock-body {
+    position: relative; z-index: 2;
+    padding: calc(var(--slot) * .55) calc(var(--slot) * .5) calc(var(--slot) * .45);
+    border-radius: calc(var(--slot) * .45);
+    background: linear-gradient(160deg, #474f5d, #1b2029 55%, #2b313c);
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.18), 0 24px 50px rgba(0,0,0,.65);
+    transition: box-shadow .4s;
+  }
+  .lock-tag {
+    text-align: center; font-family: "Share Tech Mono", monospace; font-size: 11px;
+    letter-spacing: .3em; color: #8e99aa; margin-bottom: calc(var(--slot) * .3);
+  }
+  .slots { display: flex; gap: calc(var(--slot) * .16); }
+  .slot {
+    width: var(--slot); height: calc(var(--slot) * 1.5); padding: 0;
+    border: 0; border-radius: calc(var(--slot) * .16);
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0) 32%, rgba(255,255,255,.18) 48%, rgba(0,0,0,0) 62%, rgba(0,0,0,.55)),
+      var(--c);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.22), 0 2px 0 rgba(0,0,0,.6);
+    color: #fff; text-align: center; text-transform: uppercase; caret-color: #fff;
+    font: 900 calc(var(--slot) * .66) "Share Tech Mono", "Noto Sans KR", monospace;
+    text-shadow: 0 2px 3px rgba(0,0,0,.85), 0 0 1px #000;
+    outline: none; transition: transform .15s, box-shadow .15s;
+  }
+  .slot:focus { box-shadow: inset 0 0 0 2px rgba(255,255,255,.22), 0 0 0 3px #fff; transform: translateY(-2px); }
+  .keyhole {
+    width: calc(var(--slot) * .34); height: calc(var(--slot) * .55); margin: calc(var(--slot) * .35) auto 0;
+    background: radial-gradient(circle at 50% 30%, #05070b 40%, transparent 42%), linear-gradient(#05070b, #05070b) 50% 100% / 34% 60% no-repeat;
+  }
+  .padlock.shake { animation: shake .5s; }
+  @keyframes shake { 20% { transform: translateX(-12px) rotate(-2deg); } 40% { transform: translateX(10px) rotate(2deg); } 60% { transform: translateX(-6px); } 80% { transform: translateX(4px); } }
+  .padlock.ok .lock-body { box-shadow: inset 0 2px 0 rgba(255,255,255,.18), 0 0 60px rgba(124,255,196,.8); }
+  .padlock.drop { transform: translateY(70vh) rotate(28deg); opacity: 0; }
+  .chest-view { display: none; flex-direction: column; align-items: center; padding-top: 14em; }
+  .chest-view.show { display: flex; animation: fadeUp .5s both; }
+  .chest-view .chest { font-size: clamp(8px, 2.4vw, 12px); }
+  .reward { margin-top: 26px; text-align: center; opacity: 0; transform: translateY(10px); transition: all .6s; }
+  .reward.show { opacity: 1; transform: none; }
+  .reward h3 { font-size: 22px; font-weight: 900; color: #ff8a9a; }
+  .reward p { color: var(--muted); margin-top: 6px; font-size: 14px; }
+  .reward .btn { animation: none; margin-top: 18px; }
+
+  /* 인벤토리 */
+  .inventory {
+    position: fixed; left: 24px; bottom: 20px; z-index: 30;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line);
+    font-size: 12px; color: var(--muted);
+    opacity: 0; transform: translateY(20px); transition: all .6s; pointer-events: none;
+  }
+  .inventory.show { opacity: 1; transform: none; pointer-events: auto; }
+  .inv-slot { width: 44px; height: 44px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); display: grid; place-items: center; background: rgba(0,0,0,.3); }
+  .cello-icon { width: 30px; height: 24px; transform: rotate(-8deg); border-radius: 3px;
+    background: linear-gradient(135deg, rgba(255,40,60,.9), rgba(255,120,140,.6) 45%, rgba(220,0,30,.9)); box-shadow: 0 0 10px rgba(255,40,70,.7); }
+
   @media (max-width: 640px) {
+    .chest-spot { right: 10px; bottom: 10px; }
+    .chest-spot .chest { font-size: 4.5px; }
+    .inventory { left: 10px; bottom: 10px; }
     .panel { padding: 30px 20px; }
     .id-wrap.docked { left: 12px; top: 12px; transform: scale(.42); }
     .id-card { width: 380px; padding: 16px 18px; }
     .id-photo { width: 78px; height: 96px; }
-    .stage { padding-top: 120px; }
+    .stage { padding-top: 150px; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -502,12 +704,69 @@
         </div>
       </div>
       <div class="shadow"></div>
-      <p class="drag-hint">
+      <p class="drag-hint" id="dragHint">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 13V5a2 2 0 0 1 4 0v6m0 0V4a2 2 0 0 1 4 0v7m0-2a2 2 0 0 1 4 0v5a7 7 0 0 1-7 7h-1a7 7 0 0 1-6-3l-3-5a2 2 0 0 1 3-2l2 2"/></svg>
-        드래그해서 상자를 돌려 보세요
+        <span id="hintText">드래그해서 상자를 돌려 보세요</span>
       </p>
+
+      <button class="chest-spot" id="chestSpot" aria-label="잠긴 상자 살펴보기">
+        <div class="chest" id="miniChest">
+          <div class="chest-inside"></div>
+          <div class="chest-light"></div>
+          <div class="chest-base"><div class="latch"></div></div>
+          <div class="chest-lid"></div>
+          <svg class="mini-lock" viewBox="0 0 60 70">
+            <path d="M16 32V22a14 14 0 0 1 28 0v10" fill="none" stroke="#aeb8c6" stroke-width="7"/>
+            <rect x="4" y="30" width="52" height="38" rx="7" fill="#2a303b" stroke="#596273" stroke-width="2"/>
+            <g>
+              <rect x="9" y="40" width="5" height="18" rx="1.5" fill="#1e6bff"/><rect x="15.5" y="40" width="5" height="18" rx="1.5" fill="#ffd400"/>
+              <rect x="22" y="40" width="5" height="18" rx="1.5" fill="#ff2d2d"/><rect x="28.5" y="40" width="5" height="18" rx="1.5" fill="#8b3dff"/>
+              <rect x="35" y="40" width="5" height="18" rx="1.5" fill="#1fb83a"/><rect x="41.5" y="40" width="5" height="18" rx="1.5" fill="#e83ec4"/>
+              <rect x="48" y="40" width="5" height="18" rx="1.5" fill="#ff7a00"/>
+            </g>
+          </svg>
+        </div>
+        <span class="chest-label" id="chestLabel">잠긴 상자</span>
+      </button>
+    </div>
+
+    <div class="inventory" id="inventory">
+      보유 아이템
+      <div class="inv-slot" title="빨간 셀로판지"><div class="cello-icon"></div></div>
     </div>
   </section>
+
+  <!-- 자물쇠 모달 -->
+  <div class="modal" id="lockModal" role="dialog" aria-modal="true" aria-label="7칸 자물쇠">
+    <button class="modal-close" id="lockClose" aria-label="닫기">×</button>
+    <div class="lock-view" id="lockView">
+      <p class="lock-caption">자물쇠 칸의 색과 같은 색 클립의 알파벳을 입력하세요.</p>
+      <div class="padlock" id="padlock">
+        <div class="shackle"></div>
+        <div class="lock-body">
+          <div class="lock-tag">SECURITY LOCK · 7</div>
+          <div class="slots" id="slots"></div>
+          <div class="keyhole"></div>
+        </div>
+      </div>
+      <button class="btn" id="unlockBtn">열기</button>
+      <p class="hint" id="lockHint"></p>
+    </div>
+    <div class="chest-view" id="chestView">
+      <div class="chest" id="bigChest">
+        <div class="chest-inside"></div>
+        <div class="chest-light"></div>
+        <div class="cello"></div>
+        <div class="chest-base"><div class="latch"></div></div>
+        <div class="chest-lid"></div>
+      </div>
+      <div class="reward" id="reward">
+        <h3>빨간 셀로판지를 획득했다!</h3>
+        <p>빛에 비추어 보면 무언가 달라 보일지도…</p>
+        <button class="btn" id="takeBtn">가져가기</button>
+      </div>
+    </div>
+  </div>
 
   <div class="flash" id="flash"></div>
   <div class="toast" id="toast"></div>
@@ -651,6 +910,7 @@
       $("idWrap").classList.add("docked");
       buildClips();
       $("stage").classList.add("show");
+      setTimeout(enableCard, 1400);
     }, 3600);
   }
 
@@ -694,33 +954,55 @@
   const CLIP_COLORS = ["#ff2d2d", "#ffd400", "#1fb83a", "#1e6bff", "#ff7a00", "#e83ec4", "#00c2d1", "#8b3dff", "#ffffff", "#7ed321"];
   // 종이 클립 모양 (이중 고리)
   const CLIP_PATH = "M7 16 V40 a5 5 0 0 0 10 0 V9 a7 7 0 0 0 -14 0 V44 a9 9 0 0 0 18 0 V16";
+  const clipSVG = (c) => `<svg viewBox="0 0 24 56"><path d="${CLIP_PATH}" fill="none" stroke="${c}" stroke-width="3.4" stroke-linecap="round"/><path d="${CLIP_PATH}" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1" stroke-linecap="round" transform="translate(-.6 -.6)"/></svg>`;
+
+  // 자석에 끌리는 진짜 클립 7개 (나머지는 가짜). 순서 = 자물쇠 칸 순서 = S C I E N C E
+  const SPECIAL = [
+    { letter: "S", color: "#1e6bff" }, { letter: "C", color: "#ffd400" }, { letter: "I", color: "#ff2d2d" },
+    { letter: "E", color: "#8b3dff" }, { letter: "N", color: "#1fb83a" }, { letter: "C", color: "#e83ec4" },
+    { letter: "E", color: "#ff7a00" }
+  ];
+  const ANSWER = SPECIAL.map(s => s.letter).join("");
+  // 신분증에 매달리는 순서 (자물쇠 순서와 다르게 섞음)
+  const HANG_ORDER = [3, 0, 5, 2, 6, 1, 4];
+  const specialEls = [];
+
   let built = false;
+  function placeClip(box, color, x, y, z) {
+    const el = document.createElement("div");
+    el.className = "clip";
+    const rx = Math.random() * 360, ry = Math.random() * 360, rz = Math.random() * 360;
+    el.style.transform =
+      `translate3d(calc(var(--s) * ${x / 100}), calc(var(--s) * ${y / 100}), calc(var(--s) * ${z / 100})) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg)`;
+    el.innerHTML = clipSVG(color);
+    box.appendChild(el);
+    return el;
+  }
   function buildClips() {
     if (built) return; built = true;
-    const box = $("clips");
-    const N = innerWidth < 640 ? 220 : 380;
     const frag = document.createDocumentFragment();
+    const N = innerWidth < 640 ? 220 : 380;
+    const specialAt = new Map(); // 가짜 클립 사이 무작위 위치에 진짜 클립을 끼워 넣음
+    SPECIAL.forEach((s, i) => specialAt.set(Math.floor((i + Math.random()) * N / SPECIAL.length), i));
     for (let i = 0; i < N; i++) {
-      const c = CLIP_COLORS[(Math.random() * CLIP_COLORS.length) | 0];
-      const el = document.createElement("div");
-      el.className = "clip";
+      if (specialAt.has(i)) {
+        const k = specialAt.get(i);
+        // 진짜 클립은 너무 깊숙이 묻히지 않도록 가운데~위쪽에 둠
+        const el = placeClip(frag, SPECIAL[k].color, (Math.random() * 2 - 1) * 32, -20 + Math.random() * 45, (Math.random() * 2 - 1) * 32);
+        specialEls[k] = el;
+      }
       // 상자 안쪽 범위 (-44% ~ 44%), 아래쪽이 더 촘촘하게
-      const x = (Math.random() * 2 - 1) * 42;
-      const z = (Math.random() * 2 - 1) * 42;
-      const y = 44 - Math.pow(Math.random(), 1.25) * 84; // 아래(+)로 몰림
-      const rx = Math.random() * 360, ry = Math.random() * 360, rz = Math.random() * 360;
-      el.style.transform =
-        `translate3d(calc(var(--s) * ${x / 100}), calc(var(--s) * ${y / 100}), calc(var(--s) * ${z / 100})) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg)`;
-      el.innerHTML = `<svg viewBox="0 0 24 56"><path d="${CLIP_PATH}" fill="none" stroke="${c}" stroke-width="3.4" stroke-linecap="round"/><path d="${CLIP_PATH}" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1" stroke-linecap="round" transform="translate(-.6 -.6)"/></svg>`;
-      frag.appendChild(el);
+      const c = CLIP_COLORS[(Math.random() * CLIP_COLORS.length) | 0];
+      placeClip(frag, c, (Math.random() * 2 - 1) * 42, 44 - Math.pow(Math.random(), 1.25) * 84, (Math.random() * 2 - 1) * 42);
     }
-    box.appendChild(frag);
+    $("clips").appendChild(frag);
   }
 
   // 회전: 자동 회전 + 드래그
   const cube = $("cube"), vp = $("viewport");
-  let rotX = -22, rotY = -32, dragging = false, lastX = 0, lastY = 0, velY = .12, idleSince = 0;
+  let rotX = -22, rotY = -32, dragging = false, lastX = 0, lastY = 0, velY = .12, spinPaused = false;
   vp.addEventListener("pointerdown", (e) => {
+    if (spinPaused) return;
     dragging = true; lastX = e.clientX; lastY = e.clientY; vp.setPointerCapture(e.pointerId);
   });
   vp.addEventListener("pointermove", (e) => {
@@ -730,18 +1012,330 @@
     rotY += dx * .45; rotX = Math.max(-80, Math.min(80, rotX - dy * .45));
     velY = dx * .45;
   });
-  const endDrag = () => { dragging = false; idleSince = performance.now(); };
+  const endDrag = () => { dragging = false; };
   vp.addEventListener("pointerup", endDrag);
   vp.addEventListener("pointercancel", endDrag);
   (function spin() {
     if (!dragging) {
-      // 드래그 관성 → 서서히 기본 자동회전으로
-      velY += (.12 - velY) * .03;
+      // 드래그 관성 → 서서히 기본 자동회전으로 (자석 연출 중에는 멈춤)
+      const target = spinPaused ? 0 : .12;
+      velY += (target - velY) * (spinPaused ? .12 : .03);
       rotY += velY;
     }
     cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
     requestAnimationFrame(spin);
   })();
+
+  /* ---------- 신분증 끌어다 상자에 대기 ---------- */
+  const wrap = $("idWrap");
+  let phase = "idle"; // idle → ready → magnet → done
+  let cardDrag = null;
+
+  function setHint(text) { $("hintText").textContent = text; }
+  function enableCard() {
+    phase = "ready";
+    wrap.classList.add("draggable", "call");
+    setHint("신분증을 끌어서 상자에 가져다 대 보세요 (신분증을 눌러도 돼요)");
+  }
+
+  wrap.addEventListener("pointerdown", (e) => {
+    if (phase !== "ready" && phase !== "done") return;
+    const r = wrap.getBoundingClientRect();
+    cardDrag = { ox: e.clientX - r.left, oy: e.clientY - r.top, sx: e.clientX, sy: e.clientY, moved: false };
+    wrap.classList.add("dragging");
+    wrap.classList.remove("call");
+    wrap.style.left = r.left + "px"; wrap.style.top = r.top + "px";
+    wrap.setPointerCapture(e.pointerId);
+  });
+  wrap.addEventListener("pointermove", (e) => {
+    if (!cardDrag) return;
+    if (Math.hypot(e.clientX - cardDrag.sx, e.clientY - cardDrag.sy) > 6) cardDrag.moved = true;
+    wrap.style.left = (e.clientX - cardDrag.ox) + "px";
+    wrap.style.top = (e.clientY - cardDrag.oy) + "px";
+    if (phase === "ready" && touchingCube()) { endCardDrag(); startMagnet(); }
+  });
+  function endCardDrag() {
+    cardDrag = null;
+    wrap.classList.remove("dragging");
+  }
+  function releaseCard() {
+    if (!cardDrag) return;
+    const clicked = !cardDrag.moved;
+    endCardDrag();
+    if (phase === "ready" && clicked) { startMagnet(); return; }
+    // 상자에 닿지 않았거나 이미 끝났으면 제자리로 돌아감 (클립이 흔들리며 따라옴)
+    dockCard();
+    if (phase === "ready") wrap.classList.add("call");
+  }
+  wrap.addEventListener("pointerup", releaseCard);
+  wrap.addEventListener("pointercancel", releaseCard);
+
+  function dockCard() { wrap.style.left = ""; wrap.style.top = ""; }
+
+  function touchingCube() {
+    const c = wrap.getBoundingClientRect(), v = cube.getBoundingClientRect();
+    const ox = Math.min(c.right, v.right) - Math.max(c.left, v.left);
+    const oy = Math.min(c.bottom, v.bottom) - Math.max(c.top, v.top);
+    return ox > c.width * .35 && oy > 0;
+  }
+
+  /* ---------- 자석 연출 ---------- */
+  const mclips = [];
+  let clipH = 60, clipW = 26;
+
+  function cardAnchor() {
+    const r = wrap.getBoundingClientRect();
+    return { left: r.left, width: r.width, y: r.bottom - clipH * .14 };
+  }
+  function slotX(a, slot) { return a.left + a.width * (.13 + .74 * slot / (SPECIAL.length - 1)); }
+
+  function spawnRing(x, y) {
+    const d = document.createElement("div");
+    d.className = "fring"; d.style.left = x + "px"; d.style.top = y + "px";
+    document.body.appendChild(d);
+    d.addEventListener("animationend", () => d.remove());
+  }
+
+  function startMagnet() {
+    phase = "magnet";
+    spinPaused = true;
+    wrap.classList.remove("call", "draggable");
+    setHint("…!");
+    // 신분증을 상자 바로 위로 미끄러지듯 이동
+    const r = wrap.getBoundingClientRect(), v = cube.getBoundingClientRect();
+    const s = v.height;
+    wrap.classList.add("glide");
+    wrap.style.left = (v.left + v.width / 2 - r.width / 2) + "px";
+    wrap.style.top = Math.max(8, v.top + v.height / 2 - s * .78 - r.height) + "px";
+    clipH = r.width * .28; clipW = clipH * .43;
+
+    setTimeout(() => {
+      wrap.classList.remove("glide");
+      wrap.classList.add("charged");
+      // 자기장 파동
+      const ringTimer = setInterval(() => {
+        const a = cardAnchor();
+        spawnRing(a.left + a.width / 2, a.y);
+      }, 320);
+      // 가까운 클립부터 차례로 반응
+      const a = cardAnchor(), cx = a.left + a.width / 2;
+      const order = SPECIAL.map((_, k) => k).sort((p, q) => {
+        const rp = specialEls[p].getBoundingClientRect(), rq = specialEls[q].getBoundingClientRect();
+        return Math.hypot(rp.x - cx, rp.y - a.y) - Math.hypot(rq.x - cx, rq.y - a.y);
+      });
+      order.forEach((k, i) => {
+        setTimeout(() => specialEls[k].classList.add("tremble"), 200 + i * 230);
+        setTimeout(() => launchClip(k), 200 + i * 230 + 520);
+      });
+      waitAllAttached(() => {
+        clearInterval(ringTimer);
+        setTimeout(() => {
+          wrap.classList.remove("charged");
+          dockCard();
+          spinPaused = false;
+          phase = "done";
+          wrap.classList.add("draggable");
+          toast("색이 다른 클립 7개가 신분증에 달라붙었다!", 3000);
+          setHint("클립에 적힌 알파벳을 살펴보고, 오른쪽 아래 잠긴 상자를 열어 보세요");
+          $("chestSpot").classList.add("attn");
+        }, 1300);
+      });
+    }, 650);
+  }
+
+  function launchClip(k) {
+    const src = specialEls[k];
+    const r = src.getBoundingClientRect();
+    src.classList.remove("tremble");
+    src.style.visibility = "hidden";
+
+    const el = document.createElement("div");
+    el.className = "mclip flying";
+    el.style.width = clipW + "px"; el.style.height = clipH + "px";
+    el.style.setProperty("--c", SPECIAL[k].color);
+    el.style.setProperty("--tag", Math.round(clipH * .36) + "px");
+    el.innerHTML = clipSVG(SPECIAL[k].color) + `<span class="tag">${SPECIAL[k].letter}</span>`;
+    document.body.appendChild(el);
+
+    const th = (Math.random() * 2 - 1) * 2.2;
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const sc = Math.min(1, Math.max(.35, r.height / clipH));
+    mclips.push({
+      el, k, slot: HANG_ORDER.indexOf(k),
+      // (x, y) = 클립 윗부분(매달리는 점)
+      x: cx + Math.sin(th) * clipH * sc / 2, y: cy - Math.cos(th) * clipH * sc / 2,
+      vx: (Math.random() * 2 - 1) * 1.6, vy: -1.2 - Math.random(),
+      th, w: (Math.random() * 2 - 1) * .08, sc, state: "fly",
+      lf: .85 + Math.random() * .3 // 클립마다 흔들림 주기가 조금씩 다르게
+    });
+    spawnRing(cx, cy);
+    ensureLoop();
+  }
+
+  let allCb = null;
+  function waitAllAttached(cb) { allCb = cb; }
+
+  const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+  let loopOn = false, lastT = 0;
+  function ensureLoop() { if (!loopOn) { loopOn = true; lastT = performance.now(); requestAnimationFrame(physics); } }
+
+  // 화면 주사율과 상관없이 같은 속도로 움직이도록 16.7ms 단위로 나눠 계산
+  function physics(t) {
+    const n = Math.max(1, Math.min(4, Math.round((t - lastT) / 16.67))); lastT = Math.max(lastT, t);
+    const a = cardAnchor();
+    const L = clipH * .62, G = .55;
+    for (let i = 0; i < n; i++) step(a, L, G, 1);
+    for (const m of mclips) {
+      const s = m.sc * (1 + (m.pop || 0) * .18);
+      m.el.style.transform = `translate(${m.x - clipW / 2}px, ${m.y}px) rotate(${m.th}rad) scale(${s})`;
+    }
+    requestAnimationFrame(physics);
+  }
+
+  function step(a, L, G, f) {
+    for (const m of mclips) {
+      const ax = slotX(a, m.slot), ay = a.y;
+      if (m.state === "fly") {
+        const dx = ax - m.x, dy = ay - m.y, d = Math.hypot(dx, dy) || 1;
+        // 자기력: 가까울수록 급격히 강해짐 (1/r²)
+        const acc = Math.min(2.8, 16000 / (d * d + 600));
+        m.vx = (m.vx + dx / d * acc * f) * Math.pow(.982, f);
+        m.vy = (m.vy + dy / d * acc * f) * Math.pow(.982, f);
+        // 클립이 자석 쪽을 향하도록 회전 (자기장 방향으로 정렬)
+        const target = Math.atan2(dx, -dy);
+        m.w = (m.w + angDiff(target, m.th) * .05 * Math.min(1, acc * 3) * f) * Math.pow(.86, f);
+        m.th += m.w * f;
+        m.sc += (1 - m.sc) * .05 * f;
+        const step = Math.hypot(m.vx, m.vy) * f;
+        if (d < Math.max(10, step)) {
+          // 딸깍! 달라붙음 → 진자 운동 시작
+          m.state = "hang";
+          m.x = ax; m.y = ay; m.sc = 1;
+          // 클립 아래 끝(추)의 위치 — 날아오던 운동량 일부를 넘겨받아 흔들림
+          m.bx = ax - Math.sin(m.th) * L * m.lf; m.by = ay + Math.cos(m.th) * L * m.lf;
+          m.pbx = m.bx - m.vx * .35; m.pby = m.by - m.vy * .35;
+          m.pop = 1;
+          m.el.classList.remove("flying");
+          burst(ax, ay, 14);
+          if (mclips.every(q => q.state === "hang") && mclips.length === SPECIAL.length && allCb) { const cb = allCb; allCb = null; cb(); }
+        } else {
+          m.x += m.vx * f; m.y += m.vy * f;
+        }
+      } else {
+        // 움직이는 신분증에 매달린 진자 (Verlet + 길이 고정): 신분증이 움직이면 자연스럽게 흔들림
+        const vxb = (m.bx - m.pbx) * .968, vyb = (m.by - m.pby) * .968;
+        m.pbx = m.bx; m.pby = m.by;
+        m.bx += vxb; m.by += vyb + G;
+        m.x = ax; m.y = ay;
+        if (m.pop) { m.pop = Math.max(0, m.pop - .08 * f); }
+      }
+    }
+    for (const m of mclips) {
+      if (m.state === "hang") {
+        const dx = m.bx - m.x, dy = m.by - m.y, d = Math.hypot(dx, dy) || 1;
+        m.bx = m.x + dx / d * L * m.lf; m.by = m.y + dy / d * L * m.lf;
+        m.th = Math.atan2(-dx, dy);
+      }
+    }
+  }
+
+  /* ---------- 7칸 자물쇠 ---------- */
+  const slotsBox = $("slots");
+  const slotEls = SPECIAL.map((s, i) => {
+    const inp = document.createElement("input");
+    inp.className = "slot"; inp.maxLength = 1; inp.type = "text";
+    inp.setAttribute("lang", "en"); inp.setAttribute("autocapitalize", "characters");
+    inp.setAttribute("autocomplete", "off"); inp.setAttribute("spellcheck", "false");
+    inp.setAttribute("aria-label", `${i + 1}번째 칸`);
+    inp.style.setProperty("--c", s.color);
+    slotsBox.appendChild(inp);
+    return inp;
+  });
+  const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  slotEls.forEach((inp, i) => {
+    inp.addEventListener("input", () => {
+      const raw = inp.value;
+      const v = raw.replace(/[^a-z]/gi, "").toUpperCase();
+      if (raw && !v) { $("lockHint").textContent = "영어 알파벳으로 입력하세요 (한/영 키 확인!)"; inp.value = ""; return; }
+      $("lockHint").textContent = "";
+      if (v.length > 1) { // 붙여넣기
+        [...v].slice(0, slotEls.length - i).forEach((ch, j) => slotEls[i + j].value = ch);
+        slotEls[Math.min(slotEls.length - 1, i + v.length - 1)].focus();
+        return;
+      }
+      inp.value = v;
+      if (v && i < slotEls.length - 1) slotEls[i + 1].focus();
+    });
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace" && !inp.value && i > 0) { slotEls[i - 1].value = ""; slotEls[i - 1].focus(); e.preventDefault(); }
+      else if (e.key === "ArrowLeft" && i > 0) slotEls[i - 1].focus();
+      else if (e.key === "ArrowRight" && i < slotEls.length - 1) slotEls[i + 1].focus();
+      else if (e.key === "ArrowUp" || e.key === "ArrowDown") { // 다이얼처럼 돌리기
+        const cur = LETTERS.indexOf(inp.value);
+        const n = cur < 0 ? 0 : (cur + (e.key === "ArrowUp" ? 25 : 1)) % 26;
+        inp.value = LETTERS[n]; e.preventDefault();
+      }
+      else if (e.key === "Enter") tryUnlock();
+    });
+    inp.addEventListener("focus", () => inp.select());
+  });
+
+  let unlocked = false, opening = false;
+  function openLock() {
+    $("lockModal").classList.add("open");
+    if (!unlocked) setTimeout(() => (slotEls.find(s => !s.value) || slotEls[0]).focus(), 60);
+  }
+  function closeLock() { if (!opening) $("lockModal").classList.remove("open"); }
+  $("chestSpot").addEventListener("click", () => {
+    if (unlocked) { toast("상자는 이미 비어 있다."); return; }
+    openLock();
+  });
+  $("lockClose").addEventListener("click", closeLock);
+  $("lockModal").addEventListener("click", (e) => { if (e.target.id === "lockModal") closeLock(); });
+  addEventListener("keydown", (e) => { if (e.key === "Escape") closeLock(); });
+  $("unlockBtn").addEventListener("click", tryUnlock);
+
+  function tryUnlock() {
+    if (opening) return;
+    const code = slotEls.map(s => s.value).join("");
+    const pad = $("padlock");
+    if (code.length < slotEls.length) { $("lockHint").textContent = "7칸을 모두 채워 주세요."; return; }
+    if (code !== ANSWER) {
+      $("lockHint").textContent = "철컥… 자물쇠가 꿈쩍도 하지 않는다.";
+      pad.classList.remove("shake"); void pad.offsetWidth; pad.classList.add("shake");
+      return;
+    }
+    // 정답!
+    opening = true; unlocked = true;
+    $("lockHint").textContent = "";
+    slotEls.forEach(s => s.blur());
+    pad.classList.add("ok");
+    setTimeout(() => {
+      pad.classList.add("unlocked");
+      const r = pad.getBoundingClientRect();
+      burst(r.left + r.width / 2, r.top + r.height * .2, 60);
+    }, 350);
+    setTimeout(() => pad.classList.add("drop"), 1400);
+    setTimeout(() => { $("lockView").style.display = "none"; $("chestView").classList.add("show"); }, 2300);
+    setTimeout(() => {
+      $("bigChest").classList.add("open");
+      $("flash").classList.remove("go"); void $("flash").offsetWidth; $("flash").classList.add("go");
+      const r = $("bigChest").getBoundingClientRect();
+      setTimeout(() => burst(r.left + r.width / 2, r.top + r.height * .35, 120), 500);
+    }, 2900);
+    setTimeout(() => $("reward").classList.add("show"), 4400);
+  }
+
+  $("takeBtn").addEventListener("click", () => {
+    opening = false;
+    closeLock();
+    $("miniChest").classList.add("open");
+    $("chestSpot").classList.remove("attn");
+    $("chestLabel").textContent = "열린 상자";
+    $("inventory").classList.add("show");
+    setHint("빨간 셀로판지를 얻었다. 다음 단서를 찾아보자…");
+    toast("빨간 셀로판지를 가방에 넣었다.");
+  });
 })();
 </script>
 </body>
